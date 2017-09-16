@@ -44,21 +44,44 @@ def binary_search(word,ls):
 
 def get_topic_url(pagenum,word):
     n=len(pagenum)
+    temp=0
+    i=0
     for i in range(0,n):
 
         linktoclick=pagenum[i]
         html=urlopen(linktoclick)
         bsobj=BeautifulSoup(html)
         maindiv=bsobj.find("div",{"class":"ContentWrapper"})
-        ls=maindiv.findAll("a",href=re.compile("(/topic/)"))
-        for i in ls :
-            print(i.get_text())
-            m= re.search( r'topic/(.*)',i.attrs["href"], re.M|re.I)
-            m=m.group(1)
-            print(m)
+        ls=maindiv.find("a",href=re.compile("(/topic/)"))
+        if word.lower()>ls.get_text().lower():
+        	temp=i
 
+        elif word.lower()<ls.get_text().lower() and word.lower() not in ls.get_text().lower():
+        	break
+
+
+
+        # for i in ls :
+        #     print(i.get_text())
+        #     m= re.search( r'topic/(.*)',i.attrs["href"], re.M|re.I)
+        #     m=m.group(1)
+        #     print(m)
         print("\n\n")
-        break    
+    print(temp)
+    print(i)
+    for j in range(temp,i):
+        linktoclick=pagenum[j]
+        html=urlopen(linktoclick)
+        bsobj=BeautifulSoup(html)
+        maindiv=bsobj.find("div",{"class":"ContentWrapper"})               
+        ls=maindiv.findAll("a",href=re.compile("(/topic/)"))
+        for k in ls :
+            print(k.get_text())
+            m= re.search( r'topic/(.*)',k.attrs["href"], re.M|re.I)
+            m=m.group(1)
+            print(m)       
+        print("\n\n") 
+
             
 
 
@@ -96,7 +119,7 @@ def begin(pageUrl,word):
         #print(pagenum)
 
         get_topic_url(pagenum,word)
-        break
+        
         # if got_topic!=-1:
         #     print(got_topic)
    
