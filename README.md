@@ -3,4 +3,4 @@ Python Scraper :: Scrapes quora for desired topic and gives quora links of top (
 
 source bin/activate
 
-python3 selc.py > sop.txt
+python3 selci.py > sop.txt
