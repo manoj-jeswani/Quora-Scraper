@@ -6,43 +6,12 @@ from selenium import webdriver
 driver = webdriver.Chrome("/home/mj/Documents/scrape/selscrape/chromedriver")
 
 pages=set()
+extract={}
 baseurl="https://www.quora.com"
-def getLinks(pageUrl):
-    global  pages
-    html=urlopen(baseurl+pageUrl)
-    bsObj=BeautifulSoup(html)
-    for link in bsObj.findAll("a",{"class":"question_link"},href=re.compile("(/data/)")):
-        if 'href' in link.attrs:
-            if link.attrs['href'] not in  pages:
-
-                #We have    encountered a   new page
-                newPage=link.attrs['href']
-                print(newPage)
-                pages.add(newPage)
-                if len(pages)==10:
-                    return
-                getLinks(newPage)
-                if len(pages)==10:
-                    return
-          
-# getLinks("")
-
-def binary_search(word,ls):
-    l=0;
-    r=len(ls)-1
-    mid=l+(r-l)//2
-    while l<=r:
-        if ls[mid].get_text().lower()==word:
-            return mid
-        elif ls[mid].get_text().lower()>word:
-            r=mid-1
-        else:
-            l=mid+1
-        mid=l+(r-l)//2
-    return -1
 
 
-def get_topic_url(pagenum,word):
+flag=1
+def get_topic_list(pagenum,word):
     n=len(pagenum)
     temp=0
     i=0
@@ -57,30 +26,38 @@ def get_topic_url(pagenum,word):
         	temp=i
 
         elif word.lower()<ls.get_text().lower() and word.lower() not in ls.get_text().lower():
+        	flag=-1
         	break
 
+    if i==temp:
+        try:
+          linktoclick=pagenum[i]
+          html=urlopen(linktoclick)
+          bsobj=BeautifulSoup(html)
+          maindiv=bsobj.find("div",{"class":"ContentWrapper"})               
+          ls=maindiv.findAll("a",href=re.compile("(/topic/)"))
+          if word.lower()>ls[0].get_text().lower() and word.lower()<=ls[len(ls)-1].get_text().lower() :
+             for k in ls :
+                m= re.search( r'topic/(.*)',k.attrs["href"], re.M|re.I)
+                m=m.group(1)
+                extract[k.get_text().lower()]=m
+        except:
+          pass
 
 
-        # for i in ls :
-        #     print(i.get_text())
-        #     m= re.search( r'topic/(.*)',i.attrs["href"], re.M|re.I)
-        #     m=m.group(1)
-        #     print(m)
-        print("\n\n")
-    print(temp)
-    print(i)
-    for j in range(temp,i):
-        linktoclick=pagenum[j]
-        html=urlopen(linktoclick)
-        bsobj=BeautifulSoup(html)
-        maindiv=bsobj.find("div",{"class":"ContentWrapper"})               
-        ls=maindiv.findAll("a",href=re.compile("(/topic/)"))
-        for k in ls :
-            print(k.get_text())
-            m= re.search( r'topic/(.*)',k.attrs["href"], re.M|re.I)
-            m=m.group(1)
-            print(m)       
-        print("\n\n") 
+
+    else:        
+	    for j in range(temp,i):
+	        linktoclick=pagenum[j]
+	        html=urlopen(linktoclick)
+	        bsobj=BeautifulSoup(html)
+	        maindiv=bsobj.find("div",{"class":"ContentWrapper"})               
+	        ls=maindiv.findAll("a",href=re.compile("(/topic/)"))
+	        for k in ls :
+	            m= re.search( r'topic/(.*)',k.attrs["href"], re.M|re.I)
+	            m=m.group(1)
+	            extract[k.get_text().lower()]=m
+       	       
 
             
 
@@ -116,49 +93,79 @@ def begin(pageUrl,word):
      
                 if i.get_text()!="Next" and i.get_text()!="Previous" and int(i.get_text())>int(cur) :
                     pagenum.append(baseurl+i.attrs["href"])
-        #print(pagenum)
+        get_topic_list(pagenum,word)
+        
+        if (pagen[len(pagen)-1].get_text()!="Next" or flag==-1):
+        	return extract
 
-        get_topic_url(pagenum,word)
-        
-        # if got_topic!=-1:
-        #     print(got_topic)
-   
-        #     break
-        
-        if pagen[len(pagen)-1].get_text()!="Next":
-            break
         linktoclick=pagenum[len(pagenum)-1]
         driver.get(linktoclick)
         pagenum=[]
+
      
 
+def binary_search(word,ls):
+    l=0;
+    r=len(ls)-1
+    mid=l+(r-l)//2
+    while l<=r:
+        if ls[mid].lower()==word:
+            return mid
+        elif ls[mid].lower()>word:
+            r=mid-1
+        else:
+            l=mid+1
+        mid=l+(r-l)//2
+    return -1
+
     
 
    
    
 
-    
 
+def getLinks(pageUrl):
+    global  pages
+    html=urlopen(baseurl+pageUrl)
+    bsObj=BeautifulSoup(html)
+    for link in bsObj.findAll("a",{"class":"question_link"},href=re.compile("(/data/)")):
+        if 'href' in link.attrs:
+            if link.attrs['href'] not in  pages:
+
+                #We have    encountered a   new page
+                newPage=link.attrs['href']
+                print(newPage)
+                pages.add(newPage)
+                if len(pages)==10:
+                    return
+                getLinks(newPage)
+                if len(pages)==10:
+                    return
+          
+getLinks("")
+
+
+def go_to_topic(word):
+	word=word.lower()
+	di=begin("/sitemap/alphabetical_topics/",word)
+	ls=sorted(di.keys())
+	for key in sorted(ls):
+		print(key)
+	ind=binary_search(word,ls)
+	if ind!=-1:
+		topic_url=di[ls[ind]]
+		linktoclick="https://www.quora.com/topic/{t}".format(t=topic_url)
+		driver.get(linktoclick)
+	else:
+		print("Not found!!")
  
-    # else:
 
 
-
-    # else:
-    #     print(0)
-
+go_to_topic("data")
 
 
 
 
-    # driver.get(baseurl+pageUrl+word[:2]+"?page_id=15")
-
-    
-
-
-
-
-begin("/sitemap/alphabetical_topics/","data")
 
 # # driver function
 # def main():
